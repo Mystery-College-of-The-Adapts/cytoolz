@@ -1,6 +1,7 @@
 #cython: embedsignature=True
 from cpython.dict cimport (PyDict_Check, PyDict_GetItem, PyDict_Merge,
-                           PyDict_New, PyDict_SetItem, PyDict_Update)
+                           PyDict_New, PyDict_Next, PyDict_SetItem,
+                           PyDict_Update)
 from cpython.exc cimport PyErr_Clear, PyErr_GivenExceptionMatches, PyErr_Occurred
 from cpython.list cimport PyList_Append, PyList_New
 from cpython.ref cimport PyObject
@@ -42,10 +43,12 @@ def merge(*dicts):
 
 
 cdef dict c_merge_with(object func, object dicts):
-    cdef dict result, rv, d
-    cdef list seq
-    cdef object k, v
-    cdef PyObject *obj
+    cdef:
+        dict result, rv, d
+        list seq
+        object k, v
+        PyObject *obj
+
     result = PyDict_New()
     rv = PyDict_New()
     for d in dicts:
@@ -94,10 +97,16 @@ cpdef dict valmap(object func, dict d):
     See Also:
         keymap
     """
-    cdef dict rv
+    cdef:
+        dict rv
+        Py_ssize_t pos
+        PyObject *k
+        PyObject *v
+
     rv = PyDict_New()
-    for k, v in d.iteritems():
-       PyDict_SetItem(rv, k, func(v))
+    pos = 0
+    while PyDict_Next(d, &pos, &k, &v):
+       PyDict_SetItem(rv, <object>k, func(<object>v))
     return rv
 
 
@@ -112,10 +121,16 @@ cpdef dict keymap(object func, dict d):
     See Also:
         valmap
     """
-    cdef dict rv
+    cdef:
+        dict rv
+        Py_ssize_t pos
+        PyObject *k
+        PyObject *v
+
     rv = PyDict_New()
-    for k, v in d.iteritems():
-       PyDict_SetItem(rv, func(k), v)
+    pos = 0
+    while PyDict_Next(d, &pos, &k, &v):
+       PyDict_SetItem(rv, func(<object>k), <object>v)
     return rv
 
 
@@ -132,11 +147,17 @@ cpdef dict valfilter(object predicate, dict d):
         keyfilter
         valmap
     """
-    cdef dict rv
+    cdef:
+        dict rv
+        Py_ssize_t pos
+        PyObject *k
+        PyObject *v
+
     rv = PyDict_New()
-    for k, v in d.iteritems():
-        if predicate(v):
-            PyDict_SetItem(rv, k, v)
+    pos = 0
+    while PyDict_Next(d, &pos, &k, &v):
+        if predicate(<object>v):
+            PyDict_SetItem(rv, <object>k, <object>v)
     return rv
 
 
@@ -153,11 +174,17 @@ cpdef dict keyfilter(object predicate, dict d):
         valfilter
         keymap
     """
-    cdef dict rv
+    cdef:
+        dict rv
+        Py_ssize_t pos
+        PyObject *k
+        PyObject *v
+
     rv = PyDict_New()
-    for k, v in d.iteritems():
-        if predicate(k):
-            PyDict_SetItem(rv, k, v)
+    pos = 0
+    while PyDict_Next(d, &pos, &k, &v):
+        if predicate(<object>k):
+            PyDict_SetItem(rv, <object>k, <object>v)
     return rv
 
 
