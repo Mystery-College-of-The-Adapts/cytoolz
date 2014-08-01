@@ -46,18 +46,17 @@ cdef dict c_merge_with(object func, object dicts):
     cdef dict result, rv, d
     cdef list seq
     cdef object k, v
-    cdef PyObject *obj
+    cdef PyObject *values
     result = PyDict_New()
     rv = PyDict_New()
     for d in dicts:
         for k, v in d.iteritems():
-            obj = PyDict_GetItem(result, k)
-            if obj is NULL:
-                seq = PyList_New(0)
-                PyList_Append(seq, v)
+            values = PyDict_GetItem(result, k)
+            if values is NULL:
+                seq = [v]
                 PyDict_SetItem(result, k, seq)
             else:
-                PyList_Append(<object>obj, v)
+                PyList_Append(<object>values, v)
     for k, v in result.iteritems():
         PyDict_SetItem(rv, k, func(v))
     return rv
